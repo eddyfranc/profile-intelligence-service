@@ -1,1 +1,1 @@
-web: gunicorn gender_api.wsgi
+web: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT

@@ -1,26 +1,33 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+
 from .models import Profile
 from .serializers import ProfileSerializer
 from .services import process_data
 
 
+# -------------------------
+# POST /api/profiles
+# GET  /api/profiles
+# -------------------------
 @api_view(['POST', 'GET'])
 def create_profile(request):
-    # -------------------------
-    # POST /api/profiles
-    # -------------------------
+
+    # =========================
+    # POST: Create Profile
+    # =========================
     if request.method == 'POST':
         name = request.data.get("name")
 
-        # Validation
+        # Missing name
         if name is None:
             return Response(
                 {"status": "error", "message": "Missing name"},
                 status=400
             )
 
+        # Type validation
         if not isinstance(name, str):
             return Response(
                 {"status": "error", "message": "Invalid type"},
@@ -44,11 +51,12 @@ def create_profile(request):
                 "data": ProfileSerializer(existing).data
             }, status=200)
 
-        # Fetch + process external data
+        # External API processing
         try:
             data = process_data(name)
         except Exception as e:
             api_name = str(e)
+
             if api_name not in ["Genderize", "Agify", "Nationalize"]:
                 api_name = "External API"
 
@@ -57,6 +65,7 @@ def create_profile(request):
                 "message": f"{api_name} returned an invalid response"
             }, status=502)
 
+        # Create profile
         profile = Profile.objects.create(**data)
 
         return Response({
@@ -64,9 +73,9 @@ def create_profile(request):
             "data": ProfileSerializer(profile).data
         }, status=201)
 
-    # -------------------------
-    # GET /api/profiles
-    # -------------------------
+    # =========================
+    # GET: List Profiles
+    # =========================
     queryset = Profile.objects.all()
 
     gender = request.GET.get("gender")
@@ -80,14 +89,7 @@ def create_profile(request):
     if age_group:
         queryset = queryset.filter(age_group__iexact=age_group)
 
-    data = [{
-        "id": str(p.id),
-        "name": p.name,
-        "gender": p.gender,
-        "age": p.age,
-        "age_group": p.age_group,
-        "country_id": p.country_id
-    } for p in queryset]
+    data = ProfileSerializer(queryset, many=True).data
 
     return Response({
         "status": "success",
@@ -96,6 +98,9 @@ def create_profile(request):
     }, status=200)
 
 
+# -------------------------
+# GET /api/profiles/{id}
+# -------------------------
 @api_view(['GET'])
 def get_profile(request, id):
     try:
@@ -112,6 +117,9 @@ def get_profile(request, id):
     }, status=200)
 
 
+# -------------------------
+# DELETE /api/profiles/{id}
+# -------------------------
 @api_view(['DELETE'])
 def delete_profile(request, id):
     try:

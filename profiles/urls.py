@@ -1,12 +1,14 @@
 from django.urls import path
-from .views import create_profile, list_profiles, get_profile, delete_profile
+from .views import create_profile, get_profile, delete_profile
 
 urlpatterns = [
-    # Same endpoint, different methods (IMPORTANT)
-    path('profiles', create_profile),   # POST
-    path('profiles', list_profiles),    # GET
+    # POST /api/profiles
+    # GET  /api/profiles (handled inside same view)
+    path('profiles', create_profile),
 
-    # Detail endpoints
-    path('profiles/<uuid:id>', get_profile),     # GET by ID
-    path('profiles/<uuid:id>', delete_profile),  # DELETE
+    # GET /api/profiles/{id}
+    path('profiles/<uuid:id>', get_profile),
+
+    # DELETE /api/profiles/{id}
+    path('profiles/<uuid:id>', delete_profile),
 ]
